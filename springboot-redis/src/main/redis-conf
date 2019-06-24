@@ -1,0 +1,219 @@
+#默认情况下，如果没有“bind”配置指令指定，Redis的监听会从所有网络接口服务器上可用的连接。
+
+#但是只监听一个或多个选定的接口使用也是有可能的
+#所以“bind”配置指令，后跟一个或多个IP地址。
+#就只需要监听这些地址就好了
+
+#如果你确定你的实例需要坚挺所有的接口 就把下面这行注释掉就可以了
+#意思是只监听127.0.0.1 195.11.2.1 这两个接口就可以
+bind 127.0.0.1 195.11.2.1
+#保护模式是一个安全防护层，以避免redis实例打开互联网上的访问和利用。
+
+#当保护模式开启时，如果：
+# 1）服务器是没有约束明确的一组地址的使用“bind”指令。
+# 2）没有密码配置。
+#服务器将只会接受来本地IP的连接和Unix domain sockets
+#默认情况下，安全模式是启用的，如果你想用来自其他主机的客户端连接他，你应该禁止它
+#这样的话即使没有认证的配置，也没有一套特定的接口，只要明确列出使用“bind”指令就可以访问
+#因为这里需要195.11.2.1 的访问 所以关闭保护模式
+protected-mode no
+
+#接受指定的端口连接，默认值是6379（IANA # 815344）。
+#如果端口0是指定Redis不会监听一个TCP连接。
+port 63279
+
+#参数确定了TCP连接中已完成队列(完成三次握手之后)的长度
+#当然此值必须不大于Linux系统定义的/proc/sys/net/core/somaxconn值，默认是511
+#而Linux的默认参数值是128
+#当系统并发量大并且客户端速度缓慢的时候，可以将这二个参数一起参考设定。
+tcp-backlog 511
+
+#客户端和Redis服务端的连接超时时间，默认是0，表示永不超时。
+#如果客户端空闲时间超过timeout时 则自动关闭链接
+timeout 0
+
+#如果值非0，单位是秒，表示将周期性的使用SO_KEEPALIVE检测客户端是否还处于健康状态
+#避免服务器一直阻塞，官方给出的建议值是300S。
+tcp-keepalive 300
+
+#如果值是“yes”，则启动服务的时候是后台守护进程形式，如果值是“no”，则相反
+#默认情况下，Redis不作为守护进程运行。如果你需要的话，使用“是”。
+#注意，使用“yes”的时候，Redis会写一个pid 文件，在/var/run/redis.pid
+daemonize yes
+
+#设成开机启动后，系统监控
+supervised no
+
+# 如果没设置后台守护进程，且没指定pidfile，则没有pid文件被创建
+#如果设置了后台守护进程，则会创建/var/run/redis.pid
+# 如果没设置后台守护进程，且指定了pidfile，则以pidfile为准
+#创建pid文件是尽力服务行为，意思就是如果没创建成功也无所谓不耽误Redis正常启动和运行
+pidfile /var/run/redis_63279.pid
+
+# 定义日志级别。 可以是下面的这些值：
+# debug (适用于开发或测试阶段)
+# verbose (比debug少点，但是也不少)
+# notice (适用于生产环境)
+# warning (仅仅一些重要的消息被记录)
+loglevel notice
+
+## 指定日志文件位置
+logfile "redis.log"
+
+#数据库个数 默认为16个（0-15）
+databases 16
+
+# 存 DB 到磁盘：
+#   格式：save <间隔时间（秒）> <写入次数>
+#   根据给定的时间间隔和写入次数将数据保存到磁盘
+#   下面的例子的意思是：
+#   900 秒内如果至少有 1 个 key 的值变化，则保存
+#   300 秒内如果至少有 10 个 key 的值变化，则保存
+#   60 秒内如果至少有 10000 个 key 的值变化，则保存　
+#   注意：你可以注释掉所有的 save 行来停用保存功能。
+#   也可以直接一个空字符串来实现停用：
+#   save ""
+save 900 1
+save 300 10
+save 60 10000
+
+# 默认情况下，如果 redis 最后一次的后台保存失败，redis 将停止接受写操作，
+# 这样以一种强硬的方式让用户知道数据不能正确的持久化到磁盘，否则就会没人注意到灾难的发生。
+# 如果后台保存进程重新启动工作了，redis 也将自动的允许写操作。
+# 然而你要是安装了靠谱的监控，你可能不希望 redis 这样做，那你就改成 no 好了。
+stop-writes-on-bgsave-error yes
+
+# 是否在 dump .rdb 数据库的时候使用 LZF 压缩字符串， 默认都设为 yes
+
+# 如果你希望保存子进程节省点 cpu ，你就设置它为 no ，不过这个数据集可能就会比较大
+rdbcompression yes
+
+# 是否校验rdb文件
+rdbchecksum yes
+
+# 设置 dump 的文件位置
+dbfilename dump.rdb
+
+# 工作目录， 例如上面的 dbfilename 只指定了文件名，
+# 但是它会写入到这个目录下。这个配置项一定是个目录，而不能是文件名。
+dir /alidata/redis/
+
+# 当一个 slave 与 master 失去联系，或者复制正在进行的时候，
+# slave 可能会有两种表现：
+# 1) 如果为 yes ，slave 仍然会应答客户端请求，但返回的数据可能是过时，
+#    或者数据可能是空的在第一次同步的时候
+# 2) 如果为 no ，在你执行除了 info he salveof 之外的其他命令时，
+#    slave 都将返回一个 "SYNC with master in progress" 的错误，
+slave-serve-stale-data yes
+
+# 从服务器是否只读
+slave-read-only yes
+
+# 无硬盘备份
+repl-diskless-sync no
+
+# 备份等待延迟时间
+repl-diskless-sync-delay 5
+
+#no-会使得master slave 同步数据  no-可能会造成数据延迟
+repl-disable-tcp-nodelay no
+
+# 当 主机 不能正常工作的时候，Redis Sentinel 会从 slaves 中选出一个新的 master，
+# 这个值越小，就越会被优先选中，但是如果是 0 ， 那是意味着这个 slave 不可能被选中。
+# 默认优先级为 100。
+slave-priority 100
+
+#重命名命令。如rename-command CONFIG randomcommand或rename-command CONFIG ""
+#其中后者会完全禁用CONFIG命令。
+
+#注意：Changing the name of commands that are logged into the AOF file or transmitted to #slaves may cause problems. 即若某些会写入aof文件或同步给从库的命令被rename后
+#可能会引起问题：aof文件回放时，redis实例未必会识别出被rename后的命令；
+#类似地，master实例中被配置了rename的命令，同步到slave实例执行时，后者可能无法识别这些非官方支持的"自定义"命令。
+rename-command CONFIG b840fc02d524045429941cc15f59e41cb7be6
+
+#这个选项就是负责是否开启AOF日志的开关.AOF日志,你可以简单理解为MySQL binlog一样的东西,作用
+#就是记录每次的写操作,在遇到断电等问题时可以用它来恢复数据库状态.但是他不是bin的,而是text的一行一行,写得很规范.如果你是一台redis,那你也能人肉通过它恢复数据.
+#Redis有三种类型的落地文件:
+#数据文件-在配置中可设置其位置及文件名,默认文件名dump.rdb
+#日志文件-在配置中也可以配置.当然,在你是以daemon方式运行的时候,这个值就不要设置为stdout了,#这么设置会自动被换成/dev/null
+#AOF文件-也就是我们这篇文章的主角,他的作用是用于数据恢复.他除了设置是否开启外,还可以设置开#启后以何种方式写日志.这个何种一共是三种
+#1是每次写操作都保证将fsync()来完成的
+#2是每秒调用一#次fsync()
+#3是从不调用,让操作系统自己来同步.当然,设置为不同,效率会不同,你的数据损失风险也不#同.
+appendonly no
+
+#更新日志文件名 默认为"appendonly.aof"
+appendfilename "appendonly.aof"
+
+#每秒调用一次fsync()
+appendfsync everysec
+
+#同时在执行bgrewriteaof操作和主进程写aof文件的操作，两者都会操作磁盘，而bgrewriteaof往往会
+#涉及大量磁盘操作，这样就会造成主进程在写aof文件的时候出现阻塞的情形，现在no-appendfsync-on-rewrite参数出场了。
+#如果该参数设置为no，是最安全的方式，不会丢失数据，但是要忍受阻塞的问#题。如果设置为yes呢？
+#这就相当于将appendfsync设置为no，这说明并没有执行磁盘操作，只是写入了缓冲区，因此这样并不会造成阻塞（因为没有竞争磁盘），但是如果这个时候redis挂掉，就会丢失数据。
+no-appendfsync-on-rewrite no
+
+#指定Redis重写aof文件的条件，默认为100，表示与上次rewrite的aof文件大小相比，当前aof文件增长#量超过上次afo文件大小的100%时，就会触发background rewrite。
+#若配置为0，则会禁用自动rewrite
+auto-aof-rewrite-percentage 100
+
+#指定触发rewrite的aof文件大小。若aof文件小于该值，即使当前文件的增量比例达到auto-aof-#rewrite-percentage的配置值，也不会触发自动rewrite。
+#即这两个配置项同时满足时，才会触发rewrite。
+auto-aof-rewrite-min-size 64mb
+aof-load-truncated yes
+
+# lua脚本执行时间（毫秒）
+lua-time-limit 5000
+
+#"慢操作日志"记录,单位:微秒(百万分之一秒,1000 * 1000),如果操作时间超过此值,将会把command信#息"记录"起来.(内存,非文件)。其中"操作时间"不包括网络IO开支,只包括请求达到server后进行"内存#实施"的时间."0"表示记录全部操作
+slowlog-log-slower-than 10000
+
+#"慢操作日志"保留的最大条数,"记录"将会被队列化,如果超过了此长度,旧记录将会被移除。可以通#过"SLOWLOG <subcommand> args"查看慢记录的信息(SLOWLOG get 10,SLOWLOG reset)
+slowlog-max-len 128
+latency-monitor-threshold 0
+
+# 客户端可接受的key通知类型，比如想订阅key的过期通知，就设成Ex，E表示key的事件,x表示key过期#事件
+notify-keyspace-events ""
+
+# 长度低于设置大小会使用紧凑内存，value大小低于设定大小会使用紧凑内存
+# 下面list zset设置类似
+#hash类型的数据结构在编码上可以使用ziplist和hashtable。ziplist的特点就是文件存储(以及内存存#储)所需的空间较小,在内容较小时,性能和hashtable几乎一样.因此redis对hash类型默认采取ziplist#。如果hash中条目的条目个数或者value长度达到阀值,将会被重构为hashtable。
+
+#这个参数指的是ziplist中允许存储的最大条目个数，，默认为512，建议为128
+hash-max-ziplist-entries 512
+
+#ziplist中允许条目value值最大字节数，默认为64，建议为1024
+hash-max-ziplist-value 64
+list-max-ziplist-size -2
+list-compress-depth 0
+
+#intset中允许保存的最大条目个数,如果达到阀值,intset将会被重构为hashtable
+set-max-intset-entries 512
+
+#zset为有序集合,有2中编码类型:ziplist,skiplist。因为"排序"将会消耗额外的性能,当zset中数据较#多时,将会被重构为skiplist。
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+hll-sparse-max-bytes 3000
+
+#是否开启顶层数据结构的rehash功能,如果内存允许,请开启。rehash能够很大程度上提高K-V存取的效#率
+activerehashing yes
+
+#客户端buffer控制。在客户端与server进行的交互中,每个连接都会与一个buffer关联,此buffer用来队#列化等待被client接受的响应信息。如果client不能及时的消费响应信息,那么buffer将会被不断积压#而给server带来内存压力.如果buffer中积压的数据达到阀值,将会导致连接被关闭,buffer被移除。
+
+#buffer控制类型包括:normal -> 普通连接；slave ->与slave之间的连接；pubsub ->pub/sub类型连接#，此类型的连接，往往会产生此种问题;因为pub端会密集的发布消息,但是sub端可能消费不足.
+#指令格式:client-output-buffer-limit <class> <hard> <soft> <seconds>",其中hard表示buffer最#大值,一旦达到阀值将立即关闭连接;
+#soft表示"容忍值",它和seconds配合,如果buffer值超过soft且持续时间达到了seconds,也将立即关闭#连接,如果超过了soft但是在seconds之后，buffer数据小于了soft,连接将会被保留.
+#其中hard和soft都设置为0,则表示禁用buffer控制.通常hard值大于soft.
+
+#client-output-buffer-limit <class> <hard limit> <soft limit> <soft seconds>
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit slave 256mb 64mb 60
+client-output-buffer-limit pubsub 32mb 8mb 60
+
+#Redis server执行后台任务的频率,默认为10,此值越大表示redis对"间歇性task"的执行次数越频繁(次#数/秒)。"间歇性task"包括"过期集合"检测、关闭"空闲超时"的连接等,此值必须大于0且小于500。此#值过小就意味着更多的cpu周期消耗,后台task被轮询的次数更频繁。此值过大意味着"内存敏感"性较差#。建议采用默认值。
+hz 10
+
+#aof rewrite过程中,是否采取增量文件同步策略,默认为“yes”。 rewrite过程中,每32M数据进行一次#文件同步,这样可以减少aof大文件写入对磁盘的操作次数
+aof-rewrite-incremental-fsync yes
+
